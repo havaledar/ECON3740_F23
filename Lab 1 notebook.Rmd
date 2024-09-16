@@ -1,0 +1,248 @@
+---
+title: "Lab 2"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Introduction to R and R Studio
+
+## Packages
+
+You may need to first install the library packages
+
+```{r}
+
+install.packages("tidyverse")
+
+```
+
+Libraries need to be declared every time you restart R
+
+```{r}
+
+library(tidyverse)
+library(haven)
+# library(stargazer)
+
+```
+
+# Reading Data
+
+Download LFS from Odesi Nesstar first; read-in Stata datafile straight out of the archived .zip folder
+
+## Local
+
+```{r}
+# LFS_71M0001_E_2023_May <- read_stata("LFS-71M0001-E-2023-May_F1.dta")
+```
+
+```{r}
+
+# View(LFS_71M0001_E_2023_May)
+
+```
+
+## Web
+
+```{r}
+
+url <- "https://raw.githubusercontent.com/havaledar/ECON3740/main/LFS-71M0001-E-2023-May.zip"
+
+# Download the ZIP file
+download.file(url, destfile = '/cloud/project/LFS-71M0001-E-2023-May.zip', method = "auto")
+
+LFS_71M0001_E_2023_May <- read_stata("LFS-71M0001-E-2023-May.zip")
+
+```
+
+```{r}
+
+View(LFS_71M0001_E_2023_May)
+
+```
+
+# Manipulating Data
+
+## Pipe
+
+```{r}
+
+pi %>% sin %>% cos
+
+# pi %>% 
+#   sin %>%
+#     cos
+# 
+# cos(sin(pi))
+
+```
+
+## Copy
+
+```{r}
+
+mydata <- LFS_71M0001_E_2023_May
+
+```
+
+## Summary
+
+```{r}
+
+# Comment
+
+# dim(mydata)
+colnames(mydata)
+# glimpse(mydata)
+# head(mydata)
+# view(mydata)
+# summary(mydata)
+
+```
+
+```{r}
+
+#Tabulate the Labour Force Status      
+   
+# head(mydata$LFSSTAT)
+table(mydata$LFSSTAT)
+
+```
+
+```{r}
+table(mydata$AGE_12)
+
+```
+
+```{r}
+
+# Participation rates by gender, and by gender and year:
+
+# head(mydata$SEX)
+
+table(mydata$LFSSTAT, mydata$SEX)
+
+```
+
+```{r}
+
+# row percentages
+
+prop.table(table(mydata$LFSSTAT, mydata$SEX),1)
+
+```
+
+```{r}
+
+# column percentages
+
+prop.table(table(mydata$LFSSTAT, mydata$SEX),2)
+
+```
+
+## filter
+
+Keep only prime age (25 to 64)
+
+```{r}
+
+# Investigate value labels
+
+head(mydata$AGE_12) 
+
+```
+
+```{r}
+
+mydata %>% 
+  filter(AGE_12 >= 3)
+
+```
+
+```{r}
+
+d <- mydata %>%
+  filter(AGE_12 >= 3 & AGE_12 <= 10)
+
+# d <- filter(mydata, AGE_12 >= 3 & AGE_12 <= 10)
+
+d
+```
+
+Filter by gender
+
+```{r}
+
+head(d$SEX) 
+
+```
+
+```{r}
+
+dM <- d %>% filter(SEX==1)
+dF <- d %>% filter(SEX==2)
+
+
+```
+
+## select
+
+Keep only certain variables
+
+```{r}
+
+# not really needed, unless you have memory issues
+
+d1 <- d %>% 
+  select(AGE_12, SEX, LFSSTAT, EDUC, MARSTAT, PROV, CMA, MJH)
+
+d1
+```
+
+```{r}
+
+d1 <- d1 %>% 
+  select(-CMA)
+
+```
+
+## Mutate
+
+```{r}
+
+mydata <- mydata %>% 
+  mutate(NOC_10_5 = NOC_10*5)
+
+```
+
+```{r}
+
+mydata$NOC_10_5
+
+```
+
+## if and case
+
+Generate the participation indicator from the labour force status variable LFSSTAT:
+
+```{r}
+
+head(d$LFSSTAT)
+
+```
+
+```{r}
+
+# if_else
+
+d <- d %>% 
+  mutate(partic = if_else(LFSSTAT <= 3, 1, 0)) 
+
+# d <- d %>% 
+#   mutate(unemprt = case_when(LFSSTAT == 3 ~ 1,
+#                              LFSSTAT == 4 ~ NA_real_,
+#                              TRUE         ~ 0))
+
+
+```

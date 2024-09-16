@@ -1,0 +1,387 @@
+---
+title: "Introduction to R and R Studio"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+# Lab 0: Sources
+
+## Local Machine
+
+### R
+
+<https://cran.r-project.org/>
+
+### R Studio
+
+<https://posit.co/download/rstudio-desktop/>
+
+## Posit Cloud
+
+Section 1
+
+<https://posit.cloud/>
+
+## Google Colab
+
+Section 2
+
+<https://colab.research.google.com/notebook#create=true&language=r>
+
+# Lab 1: Packages, Reading data and Pipe
+
+## Packages
+
+You may need to first install the library packages
+
+```{r}
+
+# install.packages("tidyverse")
+
+# install.packages("tidyverse")
+
+```
+
+Libraries need to be declared every time you restart R
+
+```{r}
+
+library(tidyverse)
+library(haven)
+# library(stargazer)
+
+```
+
+## Reading Data
+
+Download LFS from Odesi Nesstar first; read-in Stata datafile straight out of the archived .zip folder
+
+### Local
+
+```{r}
+
+# LFS_71M0001_E_2023_May <- read_stata("LFS-71M0001-E-2023-May_F1.dta")
+
+```
+
+```{r}
+
+# View(LFS_71M0001_E_2023_May)
+
+```
+
+### Web
+
+```{r}
+
+url <- "https://raw.githubusercontent.com/havaledar/ECON3740/main/LFS-71M0001-E-2023-May.zip"
+
+# Download the ZIP file
+download.file(url, destfile = '/cloud/project/LFS-71M0001-E-2023-May.zip', method = "auto")
+
+LFS_71M0001_E_2023_May <- read_stata("LFS-71M0001-E-2023-May.zip")
+
+```
+
+```{r}
+
+# View(LFS_71M0001_E_2023_May)
+
+```
+
+## Manipulating Data
+
+### Pipe
+
+```{r}
+
+pi %>% sin %>% cos
+
+# pi %>%
+#   sin %>%
+#     cos
+
+cos(sin(pi))
+
+```
+
+# Lab 2
+
+## Manipulating Data - continue
+
+### Copy
+
+```{r}
+
+# Copying everything into mydata
+mydata <- LFS_71M0001_E_2023_May
+
+```
+
+### Comment
+
+```{r}
+
+# This is a test
+
+```
+
+### Summary
+
+```{r}
+
+# dim(mydata)
+# colnames(mydata)
+# glimpse(mydata)
+# head(mydata)
+# summary(mydata)
+
+```
+
+```{r}
+
+#Tabulate the Labour Force Status      
+   
+# head(mydata$LFSSTAT)
+# table(mydata$LFSSTAT)
+# mydata$LFSSTAT
+```
+
+```{r}
+
+table(mydata$AGE_12)
+
+```
+
+```{r}
+
+# Participation rates by gender, and by gender and year:
+
+# head(mydata$SEX)
+
+table(mydata$LFSSTAT, mydata$SEX)
+
+```
+
+```{r}
+
+# row percentages
+
+prop.table(table(mydata$LFSSTAT, mydata$SEX),1)
+
+```
+
+```{r}
+
+# column percentages
+
+prop.table(table(mydata$LFSSTAT, mydata$SEX),2)
+
+```
+
+### filter
+
+Keep only prime age (25 to 64)
+
+```{r}
+
+# Investigate value labels
+
+head(mydata$AGE_12) 
+
+```
+
+```{r}
+
+# mydata %>%
+#   filter(AGE_12 >= 3)
+
+# filter(mydata, AGE_12 >= 3)
+
+```
+
+```{r}
+
+d <- mydata %>%
+  filter(AGE_12 >= 3 & AGE_12 <= 10)
+
+# d <- filter(mydata, AGE_12 >= 3 & AGE_12 <= 10)
+
+# d
+```
+
+Filter by gender
+
+```{r}
+
+head(d$SEX) 
+
+```
+
+```{r}
+
+dM <- d %>% filter(SEX==1)
+dF <- d %>% filter(SEX==2)
+
+```
+
+# Lab 3
+
+## Manipulating Data - continue
+
+### select
+
+Keep only certain variables
+
+```{r}
+
+# not really needed, unless you have memory issues
+
+d1 <- d %>% 
+  select(AGE_12, SEX, LFSSTAT, EDUC, MARSTAT, PROV, CMA, MJH)
+
+d1
+```
+
+```{r}
+
+d1 <- d1 %>% 
+  select(-CMA)
+
+```
+
+### Mutate
+
+```{r}
+
+mydata <- mydata %>% 
+  mutate(NOC_10_5 = NOC_10*5)
+
+```
+
+```{r}
+
+# mydata$NOC_10_5
+
+```
+
+### if and case
+
+Generate the participation indicator from the labour force status variable LFSSTAT:
+
+```{r}
+
+head(d$LFSSTAT)
+
+```
+
+```{r}
+
+# if_else
+
+d <- d %>% 
+  mutate(partic = if_else(LFSSTAT <= 3, 1, 0)) 
+
+# d <- d %>% 
+#   mutate(unemprt = case_when(LFSSTAT == 3 ~ 1,
+#                              LFSSTAT == 4 ~ NA_real_,
+#                              TRUE         ~ 0))
+
+
+```
+
+### Group by
+
+Summary statistics by group
+
+Collapsing the data by group is the easiest way of getting stats for continuous vars
+
+```{r}
+# here the group is SEX - but can use multiple groupings, eg "SEX, EDUC"
+
+dMEAN <- d %>% 
+
+  group_by(SEX) %>% 
+
+  summarise(AGE_6_mean = mean(AGE_6, na.rm = T))
+
+#view(dMEAN)
+
+#glimpse(dMEAN)
+
+#head(dMEAN)
+```
+
+## Basic Regression Analysis
+
+```{r}
+m1 <- lm(HRLYEARN ~ TENURE, mydata)
+m1
+```
+
+```{r}
+lm(log(HRLYEARN) ~ TENURE, mydata)
+```
+
+```{r}
+summary(m1)
+```
+
+```{r}
+m2 <- lm(partic ~ factor(EDUC),
+             data=d)
+summary(m2)
+```
+### stargazer
+
+```{r}
+install.packages("stargazer")
+library(stargazer)
+```
+
+```{r}
+
+stargazer(m2, type="text")
+
+```
+### Forecast
+
+```{r}
+#forecast
+pred.yhat  <- predict(m2, d)
+#out of sample forecast
+pred.youts <- predict(m2, mydata)
+```
+
+## Histogram
+
+```{r}
+hist(d$HRLYEARN)
+```
+```{r}
+hist(d$HRLYEARN[!is.na(d$HRLYEARN)])
+```
+```{r}
+hist(d$HRLYEARN[!is.na(d$HRLYEARN)], 
+     main = "Histogram of HRLYEARN (Non-NA)", 
+     xlab = "HRLYEARN Values", 
+     ylab = "Frequency")
+```
+```{r}
+hist(d$HRLYEARN[!is.na(d$HRLYEARN)], 
+     main = "Histogram of HRLYEARN (Non-NA)",
+     xlab = "HRLYEARN Values",
+     ylab = "Frequency",
+     breaks = 10)
+```
+
+```{r}
+hist(d$HRLYEARN[!is.na(d$HRLYEARN)], 
+     main = "Histogram of HRLYEARN (Non-NA)",
+     xlab = "HRLYEARN Values",
+     ylab = "Frequency",
+     breaks = 10,  # Specify the number of bins (in this case, 10 bins)
+     col = "blue")
+```
